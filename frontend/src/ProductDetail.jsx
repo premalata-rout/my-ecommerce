@@ -6,25 +6,30 @@ function ProductDetail({ addToCart }) {
   const [product, setProduct] = useState(null);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/products/${id}`)
-      .then(res => res.json())
-      .then(data => setProduct(data));
+    console.log("URL id param:", id);
+    fetch(`https://node-backend-5hzc.onrender.com/products`)
+    .then(res => res.json())
+    .then(allProducts => {
+        console.log("All products:", allProducts);
+        const found = allProducts.find(p => String(p.id) === String(id));
+        console.log("Found product:", found);
+        setProduct(found);
+      });
   }, [id]);
 
-  if(!product) return <h2>Loading...</h2>;
+  if(!product) return <h2 style={{padding:'20px'}}>Loading {id} <br/>ID={id} <br/> <Link to="/">Back</Link></h2>;
 
   return (
     <div style={{padding: '20px'}}>
-      <Link to="/">← Back to Shop</Link>
-      <div style={{display: 'flex', gap: '30px', marginTop: '20px'}}>
-        <img src={product.image} alt={product.name} style={{width: '400px', borderRadius: '10px'}}/>
+      <Link to="/">← Back to Store</Link>
+      <div style={{display: 'flex', gap: '30px', marginTop: '20px', flexWrap:'wrap'}}>
+        <img src={product.image} alt={product.name} style={{width: '400px', borderRadius: '10px', border:'1px solid #ddd'}}/>
         <div>
           <h1>{product.name}</h1>
-          <p style={{fontSize: '24px', color: 'green'}}>₹{product.price}</p>
-          <p>{product.desc || 'No description available'}</p>
-          <button 
-            onClick={() => addToCart(product)}
-            style={{padding: '12px 20px', background: '#ff5722', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}>
+          <p style={{fontSize: '24px', color: 'green', fontWeight:'bold'}}>₹{product.price}</p>
+          <p><b>Category:</b> {product.category}</p>
+          <p>{product.description || product.desc}</p>
+          <button onClick={() => addToCart(product)} style={{padding: '12px 20px', background: '#ff5722', color: 'white', border: 'none', borderRadius: '5px', cursor:'pointer'}}>
             Add to Cart
           </button>
         </div>
@@ -32,5 +37,4 @@ function ProductDetail({ addToCart }) {
     </div>
   )
 }
-
 export default ProductDetail;
