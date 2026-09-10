@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Link, useParams } from 'react-router-dom';
 import './App.css'
 
-const API = 'https://node-backend-1ki0.onrender.com';
+const API = 'https://node-backend-5hzc.onrender.com';
 
 function ProductDetail({ addToCart }) {
   const { id } = useParams();
@@ -109,8 +109,9 @@ function App() {
 
   const totalPrice = cart.reduce((total, item) => total + item.price * item.quantity, 0);
   const categories = ['All', 'Laptop', 'Mobile', 'Accessories', 'Gaming'];
-  const filteredProducts = products.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredProducts = products.filter(p => {
+    const name = (p.name || "").toLowerCase();
+    const matchSearch = name.includes(searchTerm.toLowerCase());
     const matchCategory = selectedCategory === 'All' || p.category === selectedCategory;
     return matchSearch && matchCategory;
   }).sort((a, b) => {
