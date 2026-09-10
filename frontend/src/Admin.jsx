@@ -11,7 +11,29 @@ function Admin() {
   useEffect(() => {
     fetch(`${API}/products`).then(r => r.json()).then(d => setProducts(Array.isArray(d)? d : []));
   }, []);
-
+  
+ if (!isAdmin) {
+    return (
+      <div style={{padding:'50px', maxWidth:'400px', margin:'100px auto', border:'2px solid black', borderRadius:'10px', textAlign:'center'}}>
+        <h2>🔒 Admin Login</h2>
+        <input 
+          type="password" 
+          placeholder="Enter Password" 
+          value={pass}
+          onChange={e=>setPass(e.target.value)}
+          style={{padding:'10px', width:'90%', margin:'10px'}}
+        />
+        <br/>
+        <button 
+          onClick={()=> pass===ADMIN_PASS ? setIsAdmin(true) : alert("Wrong Password!")} 
+          style={{padding:'10px 20px', background:'black', color:'white', cursor:'pointer'}}
+        >
+          Login
+        </button>
+      </div>
+    )
+  }
+  
   const getId = (p) => p._id || p.id;
 
   const addProduct = async () => {
