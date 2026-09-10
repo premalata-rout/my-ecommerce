@@ -4,38 +4,31 @@ import { useEffect, useState } from 'react';
 function ProductDetail({ addToCart }) {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`https://node-backend-5hzc.onrender.com/products/${id}`)
-     .then(res => {
-        if(!res.ok) throw new Error("Product not found");
-        return res.json();
-      })
-     .then(data => {
-        console.log("API DATA:", data);
-        setProduct(data);
-      })
-     .catch(err => {
-        console.error(err);
-        setError(err.message);
+    fetch(`https://node-backend-5hzc.onrender.com/products`)
+    .then(res => res.json())
+    .then(allProducts => {
+        console.log("All products:", allProducts);
+        const found = allProducts.find(p => String(p.id) === String(id));
+        console.log("Found product:", found);
+        setProduct(found);
       });
   }, [id]);
 
-  if(error) return <h2>{error} - Back jau <Link to="/">Store</Link></h2>
-  if(!product) return <h2>Loading product {id}...</h2>;
+  if(!product) return <h2 style={{padding:'20px'}}>Loading product {id}... Jodi besi samaya laguchi, Render sleep re achi, 30 sec wait kara <br/><Link to="/">Back</Link></h2>;
 
   return (
     <div style={{padding: '20px'}}>
       <Link to="/">← Back to Store</Link>
-      <div style={{display: 'flex', gap: '30px', marginTop: '20px'}}>
+      <div style={{display: 'flex', gap: '30px', marginTop: '20px', flexWrap:'wrap'}}>
         <img src={product.image} alt={product.name} style={{width: '400px', borderRadius: '10px', border:'1px solid #ddd'}}/>
         <div>
           <h1>{product.name}</h1>
-          <p style={{fontSize: '24px', color: 'green'}}>₹{product.price}</p>
+          <p style={{fontSize: '24px', color: 'green', fontWeight:'bold'}}>₹{product.price}</p>
           <p><b>Category:</b> {product.category}</p>
-          <p>{product.description || product.desc || 'No description'}</p>
-          <button onClick={() => addToCart(product)} style={{padding: '12px 20px', background: '#ff5722', color: 'white', border: 'none', borderRadius: '5px'}}>
+          <p>{product.description || product.desc}</p>
+          <button onClick={() => addToCart(product)} style={{padding: '12px 20px', background: '#ff5722', color: 'white', border: 'none', borderRadius: '5px', cursor:'pointer'}}>
             Add to Cart
           </button>
         </div>
