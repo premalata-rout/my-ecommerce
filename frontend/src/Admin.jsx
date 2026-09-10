@@ -7,32 +7,12 @@ function Admin() {
   const [form, setForm] = useState({ name: '', price: '', image: '', category: 'Laptop', desc: '' });
   const [isAdmin, setIsAdmin] = useState(false);
   const [pass, setPass] = useState("");
+  
   const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASSWORD || "kajal@2004";
+
   useEffect(() => {
     fetch(`${API}/products`).then(r => r.json()).then(d => setProducts(Array.isArray(d)? d : []));
   }, []);
-  
- if (!isAdmin) {
-    return (
-      <div style={{padding:'50px', maxWidth:'400px', margin:'100px auto', border:'2px solid black', borderRadius:'10px', textAlign:'center'}}>
-        <h2>🔒 Admin Login</h2>
-        <input 
-          type="password" 
-          placeholder="Enter Password" 
-          value={pass}
-          onChange={e=>setPass(e.target.value)}
-          style={{padding:'10px', width:'90%', margin:'10px'}}
-        />
-        <br/>
-        <button 
-          onClick={()=> pass===ADMIN_PASS ? setIsAdmin(true) : alert("Wrong Password!")} 
-          style={{padding:'10px 20px', background:'black', color:'white', cursor:'pointer'}}
-        >
-          Login
-        </button>
-      </div>
-    )
-  }
   
   const getId = (p) => p._id || p.id;
 
@@ -55,13 +35,24 @@ function Admin() {
     setProducts(products.filter(p => getId(p) !== id));
   };
 
-  if(!isAdmin){
+  if (!isAdmin) {
     return (
-      <div style={{padding:'50px', maxWidth:'400px', margin:'100px auto', textAlign:'center', border:'2px solid black', borderRadius:'10px'}}>
+      <div style={{padding:'50px', maxWidth:'400px', margin:'100px auto', border:'2px solid black', borderRadius:'10px', textAlign:'center'}}>
         <h2>🔒 Admin Login</h2>
-        <input type="password" placeholder="Enter Password" onChange={e=>setPass(e.target.value)} style={{width:'90%', padding:'10px', margin:'10px'}}/>
+        <input 
+          type="password" 
+          placeholder="Enter Password" 
+          value={pass}
+          onChange={e=>setPass(e.target.value)}
+          style={{padding:'10px', width:'90%', margin:'10px'}}
+        />
         <br/>
-        <button onClick={()=> pass==="kajal@2004"? setIsAdmin(true) : alert("Wrong Password!")} style={{padding:'10px 20px', background:'black', color:'white', cursor:'pointer'}}>Login</button>
+        <button 
+          onClick={()=> pass===ADMIN_PASS ? setIsAdmin(true) : alert("Wrong Password!")} 
+          style={{padding:'10px 20px', background:'black', color:'white', cursor:'pointer'}}
+        >
+          Login
+        </button>
       </div>
     )
   }
