@@ -6,6 +6,7 @@ function ProductDetail({ addToCart }) {
   const [product, setProduct] = useState(null);
 
   useEffect(() => {
+    console.log("URL id param:", id);
     fetch(`https://node-backend-5hzc.onrender.com/products`)
     .then(res => res.json())
     .then(allProducts => {
@@ -16,7 +17,7 @@ function ProductDetail({ addToCart }) {
       });
   }, [id]);
 
-  if(!product) return <h2 style={{padding:'20px'}}>Loading product {id}... Jodi besi samaya laguchi, Render sleep re achi, 30 sec wait kara <br/><Link to="/">Back</Link></h2>;
+  if(!product) return <h2 style={{padding:'20px'}}>Loading {id} <br/>ID={id} <br/> <Link to="/">Back</Link></h2>;
 
   return (
     <div style={{padding: '20px'}}>
