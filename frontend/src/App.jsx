@@ -2,18 +2,26 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Link, useParams } from 'react-router-dom';
 import './App.css'
 
-const API = import.meta.env.VITE_API_URL || 'https://node-backend-1ki0.onrender.com';
+const API = 'https://node-backend-1ki0.onrender.com';
 
-// Product Detail
 function ProductDetail({ addToCart }) {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+
   useEffect(() => {
+    console.log("Fetching ID:", id);
     fetch(`${API}/products/${id}`)
-    .then(res => res.json())
-    .then(data => setProduct(data));
+   .then(res => res.json())
+   .then(data => {
+      console.log("API Response:", data);
+      // FIX: Array asile first element nia
+      const finalProduct = Array.isArray(data)? data[0] : data;
+      setProduct(finalProduct);
+    });
   }, [id]);
-  if(!product) return <h2 style={{textAlign:'center', padding:'50px'}}>Loading...</h2>;
+
+  if(!product) return <h2 style={{textAlign:'center', padding:'50px'}}>Loading product {id}...</h2>;
+
   return (
     <div style={{padding: '20px'}}>
       <Link to="/"><button>← Back to Store</button></Link>
@@ -22,8 +30,9 @@ function ProductDetail({ addToCart }) {
         <div>
           <h1>{product.name}</h1>
           <h2 style={{color: 'green'}}>₹{product.price}</h2>
-          <p>{product.desc}</p>
-          <button onClick={() => addToCart(product)} style={{padding: '10px 20px'}}>Add to Cart</button>
+          <p><b>Category:</b> {product.category}</p>
+          <p>{product.desc || product.description || 'No description'}</p>
+          <button onClick={() => addToCart(product)} style={{padding: '10px 20px', background:'#ff9900', color:'white', border:'none', cursor:'pointer'}}>Add to Cart</button>
         </div>
       </div>
     </div>
@@ -69,21 +78,24 @@ function App() {
   const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [address, setAddress] = useState("");
 
   useEffect(() => {
-    fetch(`${API}/products`).then(res => res.json()).then(data => setProducts(data));
+    fetch(`${API}/products`).then(res => res.json()).then(data => setProducts(Array.isArray(data)? data : []));
   }, []);
 
-  // _id FIX KALA - ethi thila bhul
+  // FIX: id || _id handle
+  const getId = (p) => p._id || p.id;
+
   const addToCart = (product) => {
-    const exist = cart.find(x => x._id === product._id);
+    const pid = getId(product);
+    const exist = cart.find(x => getId(x) === pid);
     if(exist){
-      setCart(cart.map(x => x._id === product._id? {...x, quantity: x.quantity + 1} : x));
+      setCart(cart.map(x => getId(x) === pid? {...x, quantity: x.quantity + 1} : x));
     } else {
       setCart([...cart, {...product, quantity: 1}]);
     }
   }
-  const removeFromCart = (id) => setCart(cart.filter(item => item._id!== id));
-  const increaseQty = (id) => setCart(cart.map(item => item._id === id? {...item, quantity: item.quantity + 1} : item));
-  const decreaseQty = (id) => setCart(cart.map(item => item._id === id && item.quantity > 1? {...item, quantity: item.quantity - 1} : item));
+  const removeFromCart = (id) => setCart(cart.filter(item => getId(item)!== id));
+  const increaseQty = (id) => setCart(cart.map(item => getId(item) === id? {...item, quantity: item.quantity + 1} : item));
+  const decreaseQty = (id) => setCart(cart.map(item => getId(item) === id && item.quantity > 1? {...item, quantity: item.quantity - 1} : item));
 
   const handleCheckout = () => setShowCheckout(true);
   const placeOrder = () => {
@@ -133,8 +145,8 @@ function App() {
               </div>
               <div style={{display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center'}}>
                 {filteredProducts.map(product => (
-                  <div key={product._id} style={{border: '1px solid #ddd', borderRadius: '10px', padding: '15px', width: '250px', textAlign: 'center', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', backgroundColor: 'white'}} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
-                    <Link to={`/product/${product._id}`}><img src={product.image} alt={product.name} style={{width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px'}} /></Link>
+                  <div key={getId(product)} style={{border: '1px solid #ddd', borderRadius: '10px', padding: '15px', width: '250px', textAlign: 'center', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', backgroundColor: 'white'}}>
+                    <Link to={`/product/${getId(product)}`}><img src={product.image} alt={product.name} style={{width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px'}} /></Link>
                     <h3>{product.name}</h3>
                     <p style={{color: 'gray', fontSize: '14px'}}>{product.category}</p>
                     <p style={{fontSize: '20px', fontWeight: 'bold', color: 'green'}}>₹{product.price}</p>
@@ -152,13 +164,13 @@ function App() {
               {cart.length === 0? <p>Cart is empty</p> :
                 <div>
                   {cart.map((item) => (
-                    <div key={item._id} style={{borderBottom: '1px solid #ccc', padding: '10px', display: 'flex', justifyContent: 'space-between'}}>
+                    <div key={getId(item)} style={{borderBottom: '1px solid #ccc', padding: '10px', display: 'flex', justifyContent: 'space-between'}}>
                       <span>{item.name} - ₹{item.price} x {item.quantity}</span>
                       <div>
-                        <button onClick={() => decreaseQty(item._id)}>-</button>
+                        <button onClick={() => decreaseQty(getId(item))}>-</button>
                         <span style={{margin:'0 5px'}}>{item.quantity}</span>
-                        <button onClick={() => increaseQty(item._id)}>+</button>
-                        <button onClick={() => removeFromCart(item._id)} style={{backgroundColor: 'red', color: 'white', marginLeft:'5px'}}>Remove</button>
+                        <button onClick={() => increaseQty(getId(item))}>+</button>
+                        <button onClick={() => removeFromCart(getId(item))} style={{backgroundColor: 'red', color: 'white', marginLeft:'5px'}}>Remove</button>
                       </div>
                     </div>
                   ))}
