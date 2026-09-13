@@ -43,6 +43,14 @@ function Admin() {
   const [form, setForm] = useState({name:'', price:'', image:'', category:'Laptop', desc:''})
   const [isAdmin, setIsAdmin] = useState(false);
   const [pass, setPass] = useState("");
+  const [products, setProducts] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+
+  const fetchProducts = () => {
+    fetch(`${API}/products`).then(r=>r.json()).then(d=>setProducts(d));
+  }
+
+  useEffect(()=>{ if(isAdmin) fetchProducts() }, [isAdmin]);
 
   if (!isAdmin) {
     return (
@@ -58,16 +66,48 @@ function Admin() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetch(`${API}/products`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({...form, price: Number(form.price)})
-    }).then(()=>{ alert('Product Added!'); setForm({name:'', price:'', image:'', category:'Laptop', desc:''}) })
+    if(editingId){
+      // UPDATE
+      fetch(`${API}/products/${editingId}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({...form, price: Number(form.price)})
+      }).then(()=>{ 
+        alert('Product Updated!'); 
+        setEditingId(null);
+        setForm({name:'', price:'', image:'', category:'Laptop', desc:''});
+        fetchProducts();
+      })
+    } else {
+      // ADD NEW
+      fetch(`${API}/products`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({...form, price: Number(form.price)})
+      }).then(()=>{ 
+        alert('Product Added!'); 
+        setForm({name:'', price:'', image:'', category:'Laptop', desc:''});
+        fetchProducts();
+      })
+    }
   }
+
+  const handleEdit = (p) => {
+    setForm({name:p.name, price:p.price, image:p.image, category:p.category, desc:p.desc || p.description || ''});
+    setEditingId(p._id);
+    window.scrollTo(0,0);
+  }
+
+  const handleDelete = (id) => {
+    if(window.confirm("Delete kariba?")){
+      fetch(`${API}/products/${id}`, {method:'DELETE'}).then(()=>{ alert("Deleted!"); fetchProducts(); })
+    }
+  }
+
   return (
-    <div style={{padding:'20px', maxWidth:'500px', margin:'auto'}}>
+    <div style={{padding:'20px', maxWidth:'600px', margin:'auto'}}>
       <Link to="/"><button>← Back to Store</button></Link>
-      <h1>Add New Product</h1>
+      <h1>{editingId ? "Edit Product" : "Add New Product"}</h1>
       <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:'15px'}}>
         <input placeholder="Name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} required style={{padding:'10px'}}/>
         <input placeholder="Price" type="number" value={form.price} onChange={e=>setForm({...form, price:e.target.value})} required style={{padding:'10px'}}/>
@@ -76,8 +116,27 @@ function Admin() {
           <option>Laptop</option><option>Mobile</option><option>Accessories</option><option>Gaming</option>
         </select>
         <textarea placeholder="Description" value={form.desc} onChange={e=>setForm({...form, desc:e.target.value})} style={{padding:'10px'}}></textarea>
-        <button type="submit" style={{padding:'12px', background:'black', color:'white'}}>Add Product</button>
+        <button type="submit" style={{padding:'12px', background: editingId ? 'green' : 'black', color:'white'}}>
+          {editingId ? "Update Product" : "Add Product"}
+        </button>
+        {editingId && <button type="button" onClick={()=>{setEditingId(null); setForm({name:'', price:'', image:'', category:'Laptop', desc:''})}}>Cancel Edit</button>}
       </form>
+
+      <hr style={{margin:'30px 0'}}/>
+      <h2>All Products ({products.length}) - Edit/Delete karipariba</h2>
+      {products.map(p=>(
+        <div key={p._id} style={{border:'1px solid #ccc', padding:'10px', margin:'10px 0', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
+            <img src={p.image} width="50" height="50" style={{objectFit:'cover'}}/>
+            <div><b>{p.name}</b><br/>₹{p.price}</div>
+          </div>
+          <div>
+            <button onClick={()=>handleEdit(p)} style={{marginRight:'5px', background:'blue', color:'white', padding:'5px 10px'}}>✏️ Edit</button>
+            <button onClick={()=>handleDelete(p._id)} style={{background:'red', color:'white', padding:'5px 10px'}}>🗑️ Delete</button>
+          </div>
+        </div>
+      ))}
+      
       <br/><button onClick={()=>setIsAdmin(false)}>Logout</button>
     </div>
   )
