@@ -41,6 +41,21 @@ function ProductDetail({ addToCart }) {
 
 function Admin() {
   const [form, setForm] = useState({name:'', price:'', image:'', category:'Laptop', desc:''})
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [pass, setPass] = useState("");
+
+  if (!isAdmin) {
+    return (
+      <div style={{padding:'50px', maxWidth:'400px', margin:'100px auto', border:'2px solid black', borderRadius:'10px', textAlign:'center'}}>
+        <h2>🔒 Admin Login</h2>
+        <input type="password" placeholder="Enter Password" value={pass} onChange={e=>setPass(e.target.value)} style={{padding:'10px', width:'90%', margin:'10px'}} />
+        <br/>
+        <button onClick={()=> pass==="kajal@2004" ? setIsAdmin(true) : alert("Wrong Password!")} style={{padding:'10px 20px', background:'black', color:'white'}}>Login</button>
+        <br/><br/><Link to="/"><button>← Back to Store</button></Link>
+      </div>
+    )
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault();
     fetch(`${API}/products`, {
@@ -63,6 +78,7 @@ function Admin() {
         <textarea placeholder="Description" value={form.desc} onChange={e=>setForm({...form, desc:e.target.value})} style={{padding:'10px'}}></textarea>
         <button type="submit" style={{padding:'12px', background:'black', color:'white'}}>Add Product</button>
       </form>
+      <br/><button onClick={()=>setIsAdmin(false)}>Logout</button>
     </div>
   )
 }
