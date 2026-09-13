@@ -123,7 +123,7 @@ function Admin() {
       </form>
 
       <hr style={{margin:'30px 0'}}/>
-      <h2>All Products ({products.length}) - Edit/Delete karipariba</h2>
+      <h2>All Products ({products.length}) - You can Edit / Delete</h2>
       {products.map(p=>(
         <div key={p._id} style={{border:'1px solid #ccc', padding:'10px', margin:'10px 0', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
           <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
