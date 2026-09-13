@@ -67,7 +67,6 @@ function ProductDetail({ addToCart }) {
       .then((res) => res.json())
       .then((data) => {
         console.log("API Response:", data);
-        // FIX: Array asile first element nia
         const finalProduct = Array.isArray(data) ? data[0] : data;
         setProduct(finalProduct);
       });
@@ -400,18 +399,25 @@ function App() {
   const getId = (p) => p._id || p.id;
 
   const addToCart = (product) => {
-    const pid = getId(product);
-    const exist = cart.find((x) => getId(x) === pid);
-    if (exist) {
-      setCart(
-        cart.map((x) =>
-          getId(x) === pid ? { ...x, quantity: x.quantity + 1 } : x,
-        ),
-      );
-    } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
-    }
-  };
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("Please Login First! 🔒");
+    window.location.href = "/login";
+    return;
+  }
+
+  const pid = getId(product);
+  const exist = cart.find((x) => getId(x) === pid);
+  if (exist) {
+    setCart(
+      cart.map((x) =>
+        getId(x) === pid ? { ...x, quantity: x.quantity + 1 } : x,
+      ),
+    );
+  } else {
+    setCart([...cart, { ...product, quantity: 1 }]);
+  }
+};
   const removeFromCart = (id) =>
     setCart(cart.filter((item) => getId(item) !== id));
   const increaseQty = (id) =>
