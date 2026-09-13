@@ -52,6 +52,7 @@ function Admin() {
 
   useEffect(()=>{ if(isAdmin) fetchProducts() }, [isAdmin]);
 
+  // Admin Login Screen
   if (!isAdmin) {
     return (
       <div style={{padding:'50px', maxWidth:'400px', margin:'100px auto', border:'2px solid black', borderRadius:'10px', textAlign:'center'}}>
@@ -64,10 +65,11 @@ function Admin() {
     )
   }
 
+  // Add or Update Product
   const handleSubmit = (e) => {
     e.preventDefault();
     if(editingId){
-      // UPDATE
+      // UPDATE EXISTING PRODUCT
       fetch(`${API}/products/${editingId}`, {
         method: 'PUT',
         headers: {'Content-Type':'application/json'},
@@ -79,7 +81,7 @@ function Admin() {
         fetchProducts();
       })
     } else {
-      // ADD NEW
+      // ADD NEW PRODUCT
       fetch(`${API}/products`, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
@@ -93,13 +95,13 @@ function Admin() {
   }
 
   const handleEdit = (p) => {
-    setForm({name:p.name, price:p.price, image:p.image, category:p.category, desc:p.desc || p.description || ''});
-    setEditingId(p._id);
+    setForm({name:p.name, price:p.price, image:p.image, category:p.category, desc:p.desc || ''});
+    setEditingId(p.id); // Use p.id not p._id
     window.scrollTo(0,0);
   }
 
   const handleDelete = (id) => {
-    if(window.confirm("Delete kariba?")){
+    if(window.confirm("Are you sure you want to delete?")){
       fetch(`${API}/products/${id}`, {method:'DELETE'}).then(()=>{ alert("Deleted!"); fetchProducts(); })
     }
   }
@@ -123,16 +125,16 @@ function Admin() {
       </form>
 
       <hr style={{margin:'30px 0'}}/>
-      <h2>All Products ({products.length}) - You can Edit / Delete</h2>
+      <h2>All Products ({products.length})</h2>
       {products.map(p=>(
-        <div key={p._id} style={{border:'1px solid #ccc', padding:'10px', margin:'10px 0', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+        <div key={p.id} style={{border:'1px solid #ccc', padding:'10px', margin:'10px 0', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
           <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
             <img src={p.image} width="50" height="50" style={{objectFit:'cover'}}/>
             <div><b>{p.name}</b><br/>₹{p.price}</div>
           </div>
           <div>
-            <button onClick={()=>handleEdit(p)} style={{marginRight:'5px', background:'blue', color:'white', padding:'5px 10px'}}>✏️ Edit</button>
-            <button onClick={()=>handleDelete(p._id)} style={{background:'red', color:'white', padding:'5px 10px'}}>🗑️ Delete</button>
+            <button onClick={()=>handleEdit(p)} style={{marginRight:'5px', background:'blue', color:'white', padding:'5px 10px'}}>Edit</button>
+            <button onClick={()=>handleDelete(p.id)} style={{background:'red', color:'white', padding:'5px 10px'}}>Delete</button>
           </div>
         </div>
       ))}
