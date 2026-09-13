@@ -1,14 +1,61 @@
 import { useState, useEffect } from "react";
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Link,
-  useParams,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from "react-router-dom";
 import "./App.css";
 
 const API = "https://node-backend-5hzc.onrender.com";
+
+function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const login = async () => {
+    const res = await fetch(`${API}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      alert("Login Success");
+      navigate("/");
+    } else { alert(data.error); }
+  };
+  return (
+    <div style={{ maxWidth: "350px", margin: "50px auto", textAlign: "center", border: "1px solid #ccc", padding: "20px" }}>
+      <h2>Login</h2>
+      <input placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
+      <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
+      <button onClick={login} style={{ padding:"10px", background:"black", color:"white", width:"95%" }}>Login</button>
+      <p><Link to="/register">New? Register</Link></p>
+    </div>
+  );
+}
+
+function RegisterPage() {
+  const [form, setForm] = useState({ name:"", email:"", password:"" });
+  const navigate = useNavigate();
+  const register = async () => {
+    const res = await fetch(`${API}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const data = await res.json();
+    if (res.ok) { alert("Registered!"); navigate("/login"); } else { alert(data.error); }
+  };
+  return (
+    <div style={{ maxWidth: "350px", margin: "50px auto", textAlign: "center", border: "1px solid #ccc", padding: "20px" }}>
+      <h2>Register</h2>
+      <input placeholder="Name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
+      <input placeholder="Email" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
+      <input type="password" placeholder="Password" value={form.password} onChange={e=>setForm({...form, password:e.target.value})} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
+      <button onClick={register} style={{ padding:"10px", background:"green", color:"white", width:"95%" }}>Register</button>
+      <p><Link to="/login">Already have? Login</Link></p>
+    </div>
+  );
+}
 
 function ProductDetail({ addToCart }) {
   const { id } = useParams();
@@ -447,11 +494,15 @@ function App() {
             Admin
           </button>
         </Link>
+        <Link to="/login"><button>Login</button></Link>
+        <Link to="/register"><button>Register</button></Link>
         <hr />
         {orderPlaced && (
           <h2 style={{ color: "green" }}>✅ Order Placed Successfully!</h2>
         )}
         <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route
             path="/"
             element={
