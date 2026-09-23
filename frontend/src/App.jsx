@@ -12,16 +12,13 @@ function MyOrders() {
   useEffect(() => {
     if(!userId) return;
     fetch(`${API}/api/order/${userId}`)
-   .then((res) => res.json())
-   .then((data) => setOrders(Array.isArray(data)? data : []));
+  .then((res) => res.json())
+  .then((data) => setOrders(Array.isArray(data)? data : []));
   }, [userId]);
 
   const handleCancel = async (orderId) => {
     if(!window.confirm("Cancel this order? ❌")) return;
-    try {
-      await fetch(`${API}/api/order/${orderId}`, { method: "DELETE" });
-    } catch(e) {}
-    // Frontend ru bi remove kariba
+    try { await fetch(`${API}/api/order/${orderId}`, { method: "DELETE" }); } catch(e) {}
     setOrders(orders.filter(o => o._id!== orderId));
     alert("Order Cancelled!");
   }
@@ -37,7 +34,7 @@ function MyOrders() {
           <div>
             <p><b>Date:</b> {order.date? new Date(order.date).toLocaleString() : "N/A"}</p>
             <p><b>Address:</b> {order.address}</p>
-            <p><b>Total:</b> ₹{order.total}</p>
+            <p><b>Total:</b> ₹{order.total} - <b style={{color: order.paymentMethod==='Online'?'green':'orange'}}>{order.paymentMethod || 'COD'}</b></p>
             <p><b>Items:</b> {order.products?.map(p => p.name || p.title).join(", ")}</p>
           </div>
           <button onClick={() => handleCancel(order._id)} style={{background:"red", color:"white", padding:"8px 15px", border:"none", borderRadius:"5px", cursor:"pointer"}}>Cancel ❌</button>
@@ -63,8 +60,7 @@ function LoginPage() {
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("userEmail", data.user.email);
       alert("Login Success");
-      navigate("/");
-      window.location.reload();
+      navigate("/"); window.location.reload();
     } else { alert(data.error); }
   };
   return (
@@ -83,9 +79,7 @@ function RegisterPage() {
   const navigate = useNavigate();
   const register = async () => {
     const res = await fetch(`${API}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
     });
     const data = await res.json();
     if (res.ok) { alert("Registered!"); navigate("/login"); } else { alert(data.error); }
@@ -102,7 +96,7 @@ function RegisterPage() {
   );
 }
 
-function ProductDetail({ addToCart }) {
+function ProductDetail({ addToCart, addToWishlist }) {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   useEffect(() => {
@@ -122,7 +116,8 @@ function ProductDetail({ addToCart }) {
           <h2 style={{ color: "green" }}>₹{product.price}</h2>
           <p><b>Category:</b> {product.category}</p>
           <p>{product.desc || product.description || "No description"}</p>
-          <button onClick={() => addToCart(product)} style={{ padding: "10px 20px", background: "#ff9900", color: "white", border: "none", cursor: "pointer" }}>Add to Cart</button>
+          <button onClick={() => addToCart(product)} style={{ padding: "10px 20px", background: "#ff9900", color: "white", border: "none", cursor: "pointer", marginRight:"10px" }}>Add to Cart</button>
+          <button onClick={() => addToWishlist(product)} style={{ padding: "10px 20px", background: "#ff4081", color: "white", border: "none", cursor: "pointer" }}>❤️ Wishlist</button>
         </div>
       </div>
     </div>
@@ -184,6 +179,7 @@ function MainApp() {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState([]);
+  const [wishlist, setWishlist] = useState(JSON.parse(localStorage.getItem("wishlist") || "[]"));
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortOrder, setSortOrder] = useState("default");
   const [showCheckout, setShowCheckout] = useState(false);
@@ -191,8 +187,8 @@ function MainApp() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("COD");
   const navigate = useNavigate();
-
   const isLoggedIn = localStorage.getItem("token");
 
   useEffect(() => {
@@ -202,12 +198,8 @@ function MainApp() {
   const getId = (p) => p._id || p.id;
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("userEmail");
-    alert("Logged Out!");
-    navigate("/login");
-    window.location.reload();
+    localStorage.removeItem("token"); localStorage.removeItem("user"); localStorage.removeItem("userEmail");
+    alert("Logged Out!"); navigate("/login"); window.location.reload();
   };
 
   const addToCart = (product) => {
@@ -222,29 +214,42 @@ function MainApp() {
   const increaseQty = (id) => setCart(cart.map((item) => getId(item) === id? {...item, quantity: item.quantity + 1 } : item));
   const decreaseQty = (id) => setCart(cart.map((item) => getId(item) === id && item.quantity > 1? {...item, quantity: item.quantity - 1 } : item));
 
+  // WISHLIST FUNCTIONS
+  const addToWishlist = (product) => {
+    if(wishlist.find(w => getId(w) === getId(product))){ alert("Already in Wishlist ❤️"); return; }
+    const newList = [...wishlist, product];
+    setWishlist(newList);
+    localStorage.setItem("wishlist", JSON.stringify(newList));
+    alert("Added to Wishlist ❤️");
+  };
+  const removeFromWishlist = (id) => {
+    const newList = wishlist.filter(w => getId(w)!== id);
+    setWishlist(newList);
+    localStorage.setItem("wishlist", JSON.stringify(newList));
+  };
+
   const handleCheckout = () => setShowCheckout(true);
 
   const placeOrder = async () => {
     if (name === "" || phone === "" || address === "") { alert("Please fill all details!"); return; }
-    if (name.length < 3) { alert("Name must be at least 3 characters!"); return; }
     if (phone.length!== 10 || isNaN(phone)) { alert("Phone must be 10 digits!"); return; }
-    if (address.length < 10) { alert("Please enter full address!"); return; }
     const user = JSON.parse(localStorage.getItem("user") || "null");
     const userId = user?.email || localStorage.getItem("userEmail");
+
+    // FAKE ONLINE PAYMENT SUCCESS
+    if(paymentMethod === 'Online'){
+      if(!window.confirm(`Pay ₹${totalPrice} via UPI/Razorpay? (Test Payment)`)) return;
+    }
+
     try {
       await fetch(`${API}/api/order/place`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: userId,
-          products: cart,
-          total: cart.reduce((total, item) => total + item.price * item.quantity, 0),
-          address: `${name}, ${phone}, ${address}`
+          userId: userId, products: cart,
+          total: totalPrice, address: `${name}, ${phone}, ${address}`, paymentMethod: paymentMethod
         })
       });
-      setOrderPlaced(true);
-      setCart([]);
-      setName(""); setPhone(""); setAddress("");
+      setOrderPlaced(true); setCart([]); setName(""); setPhone(""); setAddress("");
       setTimeout(() => { setShowCheckout(false); setOrderPlaced(false); }, 3000);
     } catch (err) { alert("Order Failed: " + err.message); }
   };
@@ -267,22 +272,35 @@ function MainApp() {
       <h1>🛒 E-Commerce Store</h1>
       <Link to="/"><button>Store</button></Link>
       <Link to="/cart"><button>View Cart: {cart.reduce((a, b) => a + b.quantity, 0)}</button></Link>
+      <Link to="/wishlist"><button style={{background:"#ff4081", color:"white", marginLeft:"10px"}}>Wishlist: {wishlist.length}</button></Link>
       <Link to="/myorders"><button style={{background:"purple", color:"white", marginLeft:"10px"}}>My Orders</button></Link>
       <Link to="/admin"><button style={{ marginLeft: "10px", background: "black", color: "white" }}>Admin</button></Link>
-      {isLoggedIn? (
-        <button onClick={handleLogout} style={{background:"red", color:"white", marginLeft:"10px"}}>Logout</button>
-      ) : (
-        <>
-          <Link to="/login"><button>Login</button></Link>
-          <Link to="/register"><button>Register</button></Link>
-        </>
+      {isLoggedIn? (<button onClick={handleLogout} style={{background:"red", color:"white", marginLeft:"10px"}}>Logout</button>) : (
+        <><Link to="/login"><button>Login</button></Link><Link to="/register"><button>Register</button></Link></>
       )}
       <hr />
-      {orderPlaced && <h2 style={{ color: "green" }}>✅ Order Placed Successfully!</h2>}
+      {orderPlaced && <h2 style={{ color: "green" }}>✅ Order Placed Successfully! Payment: {paymentMethod}</h2>}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/myorders" element={<MyOrders />} />
+        <Route path="/wishlist" element={
+          <div style={{padding:"20px"}}>
+            <h1>My Wishlist ❤️ ({wishlist.length})</h1>
+            {wishlist.length===0? <p style={{textAlign:"center"}}>Wishlist Empty!</p> :
+              <div style={{display:"flex", flexWrap:"wrap", gap:"20px", justifyContent:"center"}}>
+                {wishlist.map(p => (
+                  <div key={getId(p)} style={{border:"1px solid #ccc", padding:"15px", width:"220px", textAlign:"center", borderRadius:"10px"}}>
+                    <img src={p.image} width="180" height="150" style={{objectFit:"cover", borderRadius:"8px"}}/>
+                    <h4>{p.name}</h4><p style={{color:"green", fontWeight:"bold"}}>₹{p.price}</p>
+                    <button onClick={() => addToCart(p)} style={{background:"#ff9900", color:"white", padding:"6px 10px", border:"none", borderRadius:"5px"}}>Add to Cart</button>
+                    <button onClick={() => removeFromWishlist(getId(p))} style={{background:"red", color:"white", padding:"6px 10px", border:"none", borderRadius:"5px", marginLeft:"5px"}}>Remove</button>
+                  </div>
+                ))}
+              </div>
+            }
+          </div>
+        }/>
         <Route path="/" element={
             <div>
               <h2 style={{ textAlign: "center" }}>Product List</h2>
@@ -303,13 +321,14 @@ function MainApp() {
                     <Link to={`/product/${getId(product)}`}><img src={product.image} alt={product.name} style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "8px" }} /></Link>
                     <h3>{product.name}</h3><p style={{ color: "gray", fontSize: "14px" }}>{product.category}</p>
                     <p style={{ fontSize: "20px", fontWeight: "bold", color: "green" }}>₹{product.price}</p>
-                    <button onClick={() => addToCart(product)} style={{ padding: "10px 20px", backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Add to Cart</button>
+                    <button onClick={() => addToCart(product)} style={{ padding: "8px 12px", backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Add to Cart</button>
+                    <button onClick={() => addToWishlist(product)} style={{ padding: "8px 10px", backgroundColor: "#ff4081", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", marginLeft:"5px" }}>❤️</button>
                   </div>
                 ))}
               </div>
             </div>
           }/>
-        <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} />} />
+        <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} addToWishlist={addToWishlist} />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/cart" element={
             <div>
@@ -330,11 +349,20 @@ function MainApp() {
                     <div style={{ border: "2px solid green", padding: "20px", margin: "20px", borderRadius: "10px" }}>
                       {orderPlaced? <h2 style={{ color: "green" }}>✅ Order Placed Successfully!</h2> : (
                         <>
-                          <h3>Enter Details</h3>
-                          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" style={{ display: "block", margin: "10px", padding: "8px" }} />
-                          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" maxLength={10} style={{ display: "block", margin: "10px", padding: "8px" }} />
-                          <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address" style={{ display: "block", margin: "10px", padding: "8px" }} />
-                          <button onClick={placeOrder} style={{ backgroundColor: "green", color: "white", padding: "10px 20px" }}>Place Order</button>
+                          <h3>Enter Details & Payment 💳</h3>
+                          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" style={{ display: "block", margin: "10px", padding: "8px", width:"90%" }} />
+                          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" maxLength={10} style={{ display: "block", margin: "10px", padding: "8px", width:"90%" }} />
+                          <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full Address" style={{ display: "block", margin: "10px", padding: "8px", width:"90%" }} />
+
+                          <div style={{margin:"15px 0", padding:"10px", background:"#f5f5f5", borderRadius:"8px"}}>
+                            <h4>Payment Method:</h4>
+                            <label style={{display:"block", margin:"5px"}}><input type="radio" checked={paymentMethod==='COD'} onChange={()=>setPaymentMethod('COD')} /> 💵 Cash on Delivery</label>
+                            <label style={{display:"block", margin:"5px"}}><input type="radio" checked={paymentMethod==='Online'} onChange={()=>setPaymentMethod('Online')} /> 📱 UPI / Razorpay (Test Payment)</label>
+                          </div>
+
+                          <button onClick={placeOrder} style={{ backgroundColor: "green", color: "white", padding: "12px 25px", border:"none", borderRadius:"5px", fontWeight:"bold" }}>
+                            {paymentMethod==='COD'? `Place Order (COD)` : `Pay ₹${totalPrice} & Order`}
+                          </button>
                         </>
                       )}
                     </div>
