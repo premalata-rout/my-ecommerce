@@ -4,31 +4,43 @@ import "./App.css";
 
 const API = "https://node-backend-5hzc.onrender.com";
 
-//My Orders Page
 function MyOrders() {
   const [orders, setOrders] = useState([]);
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user") || "null");
   const userId = user?.email || localStorage.getItem("userEmail");
 
   useEffect(() => {
     if(!userId) return;
     fetch(`${API}/api/order/${userId}`)
-    .then((res) => res.json())
-    .then((data) => setOrders(Array.isArray(data)? data : []));
+   .then((res) => res.json())
+   .then((data) => setOrders(Array.isArray(data)? data : []));
   }, [userId]);
+
+  const handleCancel = async (orderId) => {
+    if(!window.confirm("Cancel this order? ❌")) return;
+    try {
+      await fetch(`${API}/api/order/${orderId}`, { method: "DELETE" });
+    } catch(e) {}
+    // Frontend ru bi remove kariba
+    setOrders(orders.filter(o => o._id!== orderId));
+    alert("Order Cancelled!");
+  }
 
   if (!userId) return <h2 style={{textAlign:"center", marginTop:"50px"}}>Please Login to see orders! 🔒</h2>;
   if (orders.length === 0) return <h2 style={{textAlign:"center", marginTop:"50px"}}>No Orders Found!</h2>;
 
   return (
     <div style={{ padding: "20px" }}>
-      <h1>My Orders 📦</h1>
+      <h1>My Orders 📦 ({orders.length})</h1>
       {orders.map((order) => (
-        <div key={order._id} style={{ border: "1px solid #ccc", margin: "10px 0", padding: "15px", borderRadius:"8px" }}>
-          <p><b>Date:</b> {order.date? new Date(order.date).toLocaleString() : "N/A"}</p>
-          <p><b>Address:</b> {order.address}</p>
-          <p><b>Total:</b> ₹{order.total}</p>
-          <p><b>Items:</b> {order.products?.map(p => p.name || p.title).join(", ")}</p>
+        <div key={order._id} style={{ border: "1px solid #ccc", margin: "10px 0", padding: "15px", borderRadius:"8px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap" }}>
+          <div>
+            <p><b>Date:</b> {order.date? new Date(order.date).toLocaleString() : "N/A"}</p>
+            <p><b>Address:</b> {order.address}</p>
+            <p><b>Total:</b> ₹{order.total}</p>
+            <p><b>Items:</b> {order.products?.map(p => p.name || p.title).join(", ")}</p>
+          </div>
+          <button onClick={() => handleCancel(order._id)} style={{background:"red", color:"white", padding:"8px 15px", border:"none", borderRadius:"5px", cursor:"pointer"}}>Cancel ❌</button>
         </div>
       ))}
     </div>
@@ -52,6 +64,7 @@ function LoginPage() {
       localStorage.setItem("userEmail", data.user.email);
       alert("Login Success");
       navigate("/");
+      window.location.reload();
     } else { alert(data.error); }
   };
   return (
@@ -65,7 +78,56 @@ function LoginPage() {
   );
 }
 
-//... (RegisterPage, ProductDetail, Admin same as your code)
+function RegisterPage() {
+  const [form, setForm] = useState({ name:"", email:"", password:"" });
+  const navigate = useNavigate();
+  const register = async () => {
+    const res = await fetch(`${API}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const data = await res.json();
+    if (res.ok) { alert("Registered!"); navigate("/login"); } else { alert(data.error); }
+  };
+  return (
+    <div style={{ maxWidth: "350px", margin: "50px auto", textAlign: "center", border: "1px solid #ccc", padding: "20px" }}>
+      <h2>Register</h2>
+      <input placeholder="Name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
+      <input placeholder="Email" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
+      <input type="password" placeholder="Password" value={form.password} onChange={e=>setForm({...form, password:e.target.value})} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
+      <button onClick={register} style={{ padding:"10px", background:"green", color:"white", width:"95%" }}>Register</button>
+      <p><Link to="/login">Already have? Login</Link></p>
+    </div>
+  );
+}
+
+function ProductDetail({ addToCart }) {
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  useEffect(() => {
+    fetch(`${API}/products/${id}`).then((res) => res.json()).then((data) => {
+        const finalProduct = Array.isArray(data)? data[0] : data;
+        setProduct(finalProduct);
+      });
+  }, [id]);
+  if (!product) return <h2 style={{ textAlign: "center", padding: "50px" }}>Loading product {id}...</h2>;
+  return (
+    <div style={{ padding: "20px" }}>
+      <Link to="/"><button>← Back to Store</button></Link>
+      <div style={{ display: "flex", gap: "30px", marginTop: "20px", flexWrap: "wrap" }}>
+        <img src={product.image} alt={product.name} style={{ width: "400px", maxWidth: "100%", borderRadius: "8px" }} />
+        <div>
+          <h1>{product.name}</h1>
+          <h2 style={{ color: "green" }}>₹{product.price}</h2>
+          <p><b>Category:</b> {product.category}</p>
+          <p>{product.desc || product.description || "No description"}</p>
+          <button onClick={() => addToCart(product)} style={{ padding: "10px 20px", background: "#ff9900", color: "white", border: "none", cursor: "pointer" }}>Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Admin() {
   const [form, setForm] = useState({ name: "", price: "", image: "", category: "Laptop", desc: "" });
@@ -118,58 +180,7 @@ function Admin() {
   );
 }
 
-function ProductDetail({ addToCart }) {
-  const { id } = useParams();
-  const [product, setProduct] = useState(null);
-  useEffect(() => {
-    fetch(`${API}/products/${id}`).then((res) => res.json()).then((data) => {
-        const finalProduct = Array.isArray(data)? data[0] : data;
-        setProduct(finalProduct);
-      });
-  }, [id]);
-  if (!product) return <h2 style={{ textAlign: "center", padding: "50px" }}>Loading product {id}...</h2>;
-  return (
-    <div style={{ padding: "20px" }}>
-      <Link to="/"><button>← Back to Store</button></Link>
-      <div style={{ display: "flex", gap: "30px", marginTop: "20px", flexWrap: "wrap" }}>
-        <img src={product.image} alt={product.name} style={{ width: "400px", maxWidth: "100%", borderRadius: "8px" }} />
-        <div>
-          <h1>{product.name}</h1>
-          <h2 style={{ color: "green" }}>₹{product.price}</h2>
-          <p><b>Category:</b> {product.category}</p>
-          <p>{product.desc || product.description || "No description"}</p>
-          <button onClick={() => addToCart(product)} style={{ padding: "10px 20px", background: "#ff9900", color: "white", border: "none", cursor: "pointer" }}>Add to Cart</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function RegisterPage() {
-  const [form, setForm] = useState({ name:"", email:"", password:"" });
-  const navigate = useNavigate();
-  const register = async () => {
-    const res = await fetch(`${API}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    if (res.ok) { alert("Registered!"); navigate("/login"); } else { alert(data.error); }
-  };
-  return (
-    <div style={{ maxWidth: "350px", margin: "50px auto", textAlign: "center", border: "1px solid #ccc", padding: "20px" }}>
-      <h2>Register</h2>
-      <input placeholder="Name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
-      <input placeholder="Email" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
-      <input type="password" placeholder="Password" value={form.password} onChange={e=>setForm({...form, password:e.target.value})} style={{ padding:"10px", width:"90%", margin:"5px" }} /><br/>
-      <button onClick={register} style={{ padding:"10px", background:"green", color:"white", width:"95%" }}>Register</button>
-      <p><Link to="/login">Already have? Login</Link></p>
-    </div>
-  );
-}
-
-function App() {
+function MainApp() {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState([]);
@@ -180,15 +191,28 @@ function App() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const navigate = useNavigate();
+
+  const isLoggedIn = localStorage.getItem("token");
 
   useEffect(() => {
     fetch(`${API}/products`).then((res) => res.json()).then((data) => setProducts(Array.isArray(data)? data : []));
   }, []);
 
   const getId = (p) => p._id || p.id;
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userEmail");
+    alert("Logged Out!");
+    navigate("/login");
+    window.location.reload();
+  };
+
   const addToCart = (product) => {
     const token = localStorage.getItem("token");
-    if (!token) { alert("Please Login First! 🔒"); window.location.href = "/login"; return; }
+    if (!token) { alert("Please Login First! 🔒"); navigate("/login"); return; }
     const pid = getId(product);
     const exist = cart.find((x) => getId(x) === pid);
     if (exist) { setCart(cart.map((x) => getId(x) === pid? {...x, quantity: x.quantity + 1 } : x)); }
@@ -205,10 +229,8 @@ function App() {
     if (name.length < 3) { alert("Name must be at least 3 characters!"); return; }
     if (phone.length!== 10 || isNaN(phone)) { alert("Phone must be 10 digits!"); return; }
     if (address.length < 10) { alert("Please enter full address!"); return; }
-
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "null");
     const userId = user?.email || localStorage.getItem("userEmail");
-
     try {
       await fetch(`${API}/api/order/place`, {
         method: "POST",
@@ -241,83 +263,95 @@ function App() {
     });
 
   return (
-    <BrowserRouter>
-      <div style={{ padding: "20px", fontFamily: "Arial" }}>
-        <h1>🛒 E-Commerce Store</h1>
-        <Link to="/"><button>Store</button></Link>
-        <Link to="/cart"><button>View Cart: {cart.reduce((a, b) => a + b.quantity, 0)}</button></Link>
-        <Link to="/myorders"><button style={{background:"purple", color:"white", marginLeft:"10px"}}>My Orders</button></Link>
-        <Link to="/admin"><button style={{ marginLeft: "10px", background: "black", color: "white" }}>Admin</button></Link>
-        <Link to="/login"><button>Login</button></Link>
-        <Link to="/register"><button>Register</button></Link>
-        <hr />
-        {orderPlaced && <h2 style={{ color: "green" }}>✅ Order Placed Successfully!</h2>}
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/myorders" element={<MyOrders />} />
-          <Route path="/" element={
-              <div>
-                <h2 style={{ textAlign: "center" }}>Product List</h2>
-                <input type="text" placeholder="Search products..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: "50%", padding: "10px", margin: "10px auto", display: "block" }} />
-                <div style={{ textAlign: "center", margin: "20px 0" }}>
-                  {categories.map((cat) => (
-                    <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ margin: "5px", padding: "10px 20px", backgroundColor: selectedCategory === cat? "#007bff" : "#6c757d", color: "white", border: "none", borderRadius: "20px", cursor: "pointer", fontWeight: "bold" }}>{cat}</button>
-                  ))}
-                </div>
-                <div style={{ textAlign: "center", margin: "10px 0" }}>
-                  <button onClick={() => setSortOrder("default")} style={{ margin: "5px" }}>Default</button>
-                  <button onClick={() => setSortOrder("low-high")} style={{ margin: "5px" }}>Low to High</button>
-                  <button onClick={() => setSortOrder("high-low")} style={{ margin: "5px" }}>High to Low</button>
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>
-                  {filteredProducts.map((product) => (
-                    <div key={getId(product)} style={{ border: "1px solid #ddd", borderRadius: "10px", padding: "15px", width: "250px", textAlign: "center", boxShadow: "0 4px 8px rgba(0,0,0,0.1)", backgroundColor: "white" }}>
-                      <Link to={`/product/${getId(product)}`}><img src={product.image} alt={product.name} style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "8px" }} /></Link>
-                      <h3>{product.name}</h3><p style={{ color: "gray", fontSize: "14px" }}>{product.category}</p>
-                      <p style={{ fontSize: "20px", fontWeight: "bold", color: "green" }}>₹{product.price}</p>
-                      <button onClick={() => addToCart(product)} style={{ padding: "10px 20px", backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Add to Cart</button>
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+      <h1>🛒 E-Commerce Store</h1>
+      <Link to="/"><button>Store</button></Link>
+      <Link to="/cart"><button>View Cart: {cart.reduce((a, b) => a + b.quantity, 0)}</button></Link>
+      <Link to="/myorders"><button style={{background:"purple", color:"white", marginLeft:"10px"}}>My Orders</button></Link>
+      <Link to="/admin"><button style={{ marginLeft: "10px", background: "black", color: "white" }}>Admin</button></Link>
+      {isLoggedIn? (
+        <button onClick={handleLogout} style={{background:"red", color:"white", marginLeft:"10px"}}>Logout</button>
+      ) : (
+        <>
+          <Link to="/login"><button>Login</button></Link>
+          <Link to="/register"><button>Register</button></Link>
+        </>
+      )}
+      <hr />
+      {orderPlaced && <h2 style={{ color: "green" }}>✅ Order Placed Successfully!</h2>}
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/myorders" element={<MyOrders />} />
+        <Route path="/" element={
+            <div>
+              <h2 style={{ textAlign: "center" }}>Product List</h2>
+              <input type="text" placeholder="Search products..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: "50%", padding: "10px", margin: "10px auto", display: "block" }} />
+              <div style={{ textAlign: "center", margin: "20px 0" }}>
+                {categories.map((cat) => (
+                  <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ margin: "5px", padding: "10px 20px", backgroundColor: selectedCategory === cat? "#007bff" : "#6c757d", color: "white", border: "none", borderRadius: "20px", cursor: "pointer", fontWeight: "bold" }}>{cat}</button>
+                ))}
+              </div>
+              <div style={{ textAlign: "center", margin: "10px 0" }}>
+                <button onClick={() => setSortOrder("default")} style={{ margin: "5px" }}>Default</button>
+                <button onClick={() => setSortOrder("low-high")} style={{ margin: "5px" }}>Low to High</button>
+                <button onClick={() => setSortOrder("high-low")} style={{ margin: "5px" }}>High to Low</button>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>
+                {filteredProducts.map((product) => (
+                  <div key={getId(product)} style={{ border: "1px solid #ddd", borderRadius: "10px", padding: "15px", width: "250px", textAlign: "center", boxShadow: "0 4px 8px rgba(0,0,0,0.1)", backgroundColor: "white" }}>
+                    <Link to={`/product/${getId(product)}`}><img src={product.image} alt={product.name} style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "8px" }} /></Link>
+                    <h3>{product.name}</h3><p style={{ color: "gray", fontSize: "14px" }}>{product.category}</p>
+                    <p style={{ fontSize: "20px", fontWeight: "bold", color: "green" }}>₹{product.price}</p>
+                    <button onClick={() => addToCart(product)} style={{ padding: "10px 20px", backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Add to Cart</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          }/>
+        <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/cart" element={
+            <div>
+              <h2>Your Cart</h2>
+              {cart.length === 0? <p>Cart is empty</p> : (
+                <div>
+                  {cart.map((item) => (
+                    <div key={getId(item)} style={{ borderBottom: "1px solid #ccc", padding: "10px", display: "flex", justifyContent: "space-between" }}>
+                      <span>{item.name} - ₹{item.price} x {item.quantity}</span>
+                      <div>
+                        <button onClick={() => decreaseQty(getId(item))}>-</button><span style={{ margin: "0 5px" }}>{item.quantity}</span><button onClick={() => increaseQty(getId(item))}>+</button>
+                        <button onClick={() => removeFromCart(getId(item))} style={{ backgroundColor: "red", color: "white", marginLeft: "5px" }}>Remove</button>
+                      </div>
                     </div>
                   ))}
+                  <h3>Total: ₹{totalPrice}</h3><button onClick={handleCheckout}>Checkout</button>
+                  {showCheckout && (
+                    <div style={{ border: "2px solid green", padding: "20px", margin: "20px", borderRadius: "10px" }}>
+                      {orderPlaced? <h2 style={{ color: "green" }}>✅ Order Placed Successfully!</h2> : (
+                        <>
+                          <h3>Enter Details</h3>
+                          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" style={{ display: "block", margin: "10px", padding: "8px" }} />
+                          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" maxLength={10} style={{ display: "block", margin: "10px", padding: "8px" }} />
+                          <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address" style={{ display: "block", margin: "10px", padding: "8px" }} />
+                          <button onClick={placeOrder} style={{ backgroundColor: "green", color: "white", padding: "10px 20px" }}>Place Order</button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            }/>
-          <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/cart" element={
-              <div>
-                <h2>Your Cart</h2>
-                {cart.length === 0? <p>Cart is empty</p> : (
-                  <div>
-                    {cart.map((item) => (
-                      <div key={getId(item)} style={{ borderBottom: "1px solid #ccc", padding: "10px", display: "flex", justifyContent: "space-between" }}>
-                        <span>{item.name} - ₹{item.price} x {item.quantity}</span>
-                        <div>
-                          <button onClick={() => decreaseQty(getId(item))}>-</button><span style={{ margin: "0 5px" }}>{item.quantity}</span><button onClick={() => increaseQty(getId(item))}>+</button>
-                          <button onClick={() => removeFromCart(getId(item))} style={{ backgroundColor: "red", color: "white", marginLeft: "5px" }}>Remove</button>
-                        </div>
-                      </div>
-                    ))}
-                    <h3>Total: ₹{totalPrice}</h3><button onClick={handleCheckout}>Checkout</button>
-                    {showCheckout && (
-                      <div style={{ border: "2px solid green", padding: "20px", margin: "20px", borderRadius: "10px" }}>
-                        {orderPlaced? <h2 style={{ color: "green" }}>✅ Order Placed Successfully!</h2> : (
-                          <>
-                            <h3>Enter Details</h3>
-                            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" style={{ display: "block", margin: "10px", padding: "8px" }} />
-                            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" maxLength={10} style={{ display: "block", margin: "10px", padding: "8px" }} />
-                            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address" style={{ display: "block", margin: "10px", padding: "8px" }} />
-                            <button onClick={placeOrder} style={{ backgroundColor: "green", color: "white", padding: "10px 20px" }}>Place Order</button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            }/>
-        </Routes>
-      </div>
+              )}
+            </div>
+          }/>
+      </Routes>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <MainApp />
     </BrowserRouter>
   );
 }
