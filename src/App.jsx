@@ -6,21 +6,30 @@ const API = "https://node-backend-5hzc.onrender.com";
 
 function MyOrders() {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const userId = user?.email || localStorage.getItem("userEmail");
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     fetch(`${API}/api/order/${encodeURIComponent(userId)}`)
-     .then((res) => res.json())
-     .then((data) => setOrders(Array.isArray(data)? data : []));
+    .then((res) => res.json())
+    .then((data) => {
+       setOrders(Array.isArray(data)? data : []);
+       setLoading(false);
+     })
+    .catch(() => setLoading(false));
   }, [userId]);
 
   const handleCancel = async (orderId) => {
     if (!window.confirm("Cancel this order? ❌")) return;
     try {
       const res = await fetch(`${API}/api/order/cancel/${orderId}`, { method: "PUT" });
-      if (!res.ok) throw new Error("Backend route missing");
+      if (!res.ok) throw new Error("Backend not deployed");
       setOrders((prev) => prev.map((o) => (o._id === orderId? {...o, status: "Cancelled" } : o)));
       alert("Order Cancelled! ❌");
     } catch (e) {
@@ -29,6 +38,7 @@ function MyOrders() {
   };
 
   if (!userId) return <h2 style={{ textAlign: "center", marginTop: "50px" }}>Please Login to see orders! 🔒</h2>;
+  if (loading) return <h2 style={{ textAlign: "center", marginTop: "50px" }}>Loading Orders...</h2>;
   if (orders.length === 0) return <h2 style={{ textAlign: "center", marginTop: "50px" }}>No Orders Found! 📦<br /><span style={{ fontSize: "12px", color: "#888" }}>{userId}</span></h2>;
 
   return (
