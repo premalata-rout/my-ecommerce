@@ -9,17 +9,28 @@ function MyOrders() {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const userId = user?.email || localStorage.getItem("userEmail");
 
+  const [cancelledIds, setCancelledIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cancelledOrders") || "[]"); } catch { return []; }
+  });
+
   useEffect(() => {
     if(!userId) return;
     fetch(`${API}/api/order/${userId}`)
-   .then((res) => res.json())
-   .then((data) => setOrders(Array.isArray(data)? data : []));
-  }, [userId]);
+  .then((res) => res.json())
+  .then((data) => {
+      const all = Array.isArray(data)? data : [];
+      const filtered = all.filter(o =>!cancelledIds.includes(o._id));
+      setOrders(filtered);
+   });
+  }, [userId, cancelledIds]);
 
   const handleCancel = async (orderId) => {
     if(!window.confirm("Cancel this order? ❌")) return;
-    try { await fetch(`${API}/api/order/${orderId}`, { method: "DELETE" }); } catch(e) {}
-    setOrders(orders.filter(o => o._id!== orderId));
+    setOrders(prev => prev.filter(o => o._id!== orderId));
+    const newList = [...cancelledIds, orderId];
+    setCancelledIds(newList);
+    localStorage.setItem("cancelledOrders", JSON.stringify(newList));
+    try { await fetch(`${API}/api/order/${orderId}`, { method: "DELETE" }); } catch(e) { console.log(e); }
     alert("Order Cancelled! ✅");
   }
 
