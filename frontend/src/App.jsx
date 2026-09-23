@@ -117,7 +117,7 @@ function ProductDetail({ addToCart, addToWishlist }) {
           <p><b>Category:</b> {product.category}</p>
           <p>{product.desc || product.description || "No description"}</p>
           <button onClick={() => addToCart(product)} style={{ padding: "10px 20px", background: "#ff9900", color: "white", border: "none", cursor: "pointer", marginRight:"10px" }}>Add to Cart</button>
-          <button onClick={() => addToWishlist(product)} style={{ padding: "10px 20px", background: "#ff4081", color: "white", border: "none", cursor: "pointer" }}>❤️ Wishlist</button>
+          <button onClick={() => addToWishlist(product)} style={{ padding: "8px 12px", backgroundColor: "white", color: "#ff4081", border: "2px solid #ff4081", borderRadius: "5px", cursor: "pointer", marginLeft:"5px", fontWeight:"bold" }}>❤️ Wishlist</button>
         </div>
       </div>
     </div>
@@ -322,7 +322,7 @@ function MainApp() {
                     <h3>{product.name}</h3><p style={{ color: "gray", fontSize: "14px" }}>{product.category}</p>
                     <p style={{ fontSize: "20px", fontWeight: "bold", color: "green" }}>₹{product.price}</p>
                     <button onClick={() => addToCart(product)} style={{ padding: "8px 12px", backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Add to Cart</button>
-                    <button onClick={() => addToWishlist(product)} style={{ padding: "8px 10px", backgroundColor: "#ff4081", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", marginLeft:"5px" }}>❤️</button>
+                    <button onClick={() => addToWishlist(product)} style={{ padding: "8px 12px", backgroundColor: "white", color: "#ff4081", border: "2px solid #ff4081", borderRadius: "5px", cursor: "pointer", marginLeft:"5px", fontWeight:"bold" }}>❤️ Wishlist</button>
                   </div>
                 ))}
               </div>
