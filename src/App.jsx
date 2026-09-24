@@ -10,31 +10,28 @@ function MyOrders() {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const userId = user?.email || localStorage.getItem("userEmail");
 
-  useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
+  const fetchOrders = async () => {
+    if (!userId) { setLoading(false); return; }
     setLoading(true);
-    fetch(`${API}/api/order/${encodeURIComponent(userId)}`)
-    .then((res) => res.json())
-    .then((data) => {
-       setOrders(Array.isArray(data)? data : []);
-       setLoading(false);
-     })
-    .catch(() => setLoading(false));
-  }, [userId]);
+    try {
+      const res = await fetch(`${API}/api/order/${encodeURIComponent(userId)}`);
+      const data = await res.json();
+      setOrders(Array.isArray(data)? data : []);
+    } catch { setOrders([]); }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchOrders(); }, [userId]);
 
   const handleCancel = async (orderId) => {
     if (!window.confirm("Cancel this order? ❌")) return;
     try {
       const res = await fetch(`${API}/api/order/cancel/${orderId}`, { method: "PUT" });
-      if (!res.ok) throw new Error("Backend not deployed");
-      setOrders((prev) => prev.map((o) => (o._id === orderId? {...o, status: "Cancelled" } : o)));
+      const result = await res.json();
+      if (!res.ok) { alert(result.error || "Cancel failed"); return; }
       alert("Order Cancelled! ❌");
-    } catch (e) {
-      alert("Failed! " + e.message);
-    }
+      await fetchOrders();
+    } catch (e) { alert("Failed! " + e.message); }
   };
 
   if (!userId) return <h2 style={{ textAlign: "center", marginTop: "50px" }}>Please Login to see orders! 🔒</h2>;
@@ -90,7 +87,6 @@ function LoginPage() {
   };
   return (<div style={{ maxWidth: "350px", margin: "50px auto", textAlign: "center", border: "1px solid #ccc", padding: "20px" }}><h2>Login</h2><input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={{ padding: "10px", width: "90%", margin: "5px" }} /><br /><input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: "10px", width: "90%", margin: "5px" }} /><br /><button onClick={login} style={{ padding: "10px", background: "black", color: "white", width: "95%" }}>Login</button><p><Link to="/register">New? Register</Link></p></div>);
 }
-
 function RegisterPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" }); const navigate = useNavigate();
   const register = async () => {
@@ -100,14 +96,12 @@ function RegisterPage() {
   };
   return (<div style={{ maxWidth: "350px", margin: "50px auto", textAlign: "center", border: "1px solid #ccc", padding: "20px" }}><h2>Register</h2><input placeholder="Name" value={form.name} onChange={e => setForm({...form, name: e.target.value })} style={{ padding: "10px", width: "90%", margin: "5px" }} /><br /><input placeholder="Email" value={form.email} onChange={e => setForm({...form, email: e.target.value })} style={{ padding: "10px", width: "90%", margin: "5px" }} /><br /><input type="password" placeholder="Password" value={form.password} onChange={e => setForm({...form, password: e.target.value })} style={{ padding: "10px", width: "90%", margin: "5px" }} /><br /><button onClick={register} style={{ padding: "10px", background: "green", color: "white", width: "95%" }}>Register</button><p><Link to="/login">Already have? Login</Link></p></div>);
 }
-
 function ProductDetail({ addToCart, addToWishlist }) {
   const { id } = useParams(); const [product, setProduct] = useState(null);
   useEffect(() => { fetch(`${API}/products/${id}`).then((res) => res.json()).then((data) => { const finalProduct = Array.isArray(data)? data[0] : data; setProduct(finalProduct); }); }, [id]);
   if (!product) return <h2 style={{ textAlign: "center", padding: "50px" }}>Loading...</h2>;
   return (<div style={{ padding: "20px" }}><Link to="/"><button>← Back</button></Link><div style={{ display: "flex", gap: "30px", marginTop: "20px", flexWrap: "wrap" }}><img src={product.image} alt={product.name} style={{ width: "400px", maxWidth: "100%", borderRadius: "8px" }} /><div><h1>{product.name}</h1><h2 style={{ color: "green" }}>₹{product.price}</h2><p><b>Category:</b> {product.category}</p><p>{product.desc || product.description}</p><button onClick={() => addToCart(product)} style={{ padding: "10px 20px", background: "#ff9900", color: "white", border: "none", cursor: "pointer", marginRight: "10px" }}>Add to Cart</button><button onClick={() => addToWishlist(product)} style={{ padding: "8px 12px", background: "white", color: "#ff4081", border: "2px solid #ff4081", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }}>❤️ Wishlist</button></div></div></div>);
 }
-
 function Admin() {
   const [form, setForm] = useState({ name: "", price: "", image: "", category: "Laptop", desc: "" }); const [isAdmin, setIsAdmin] = useState(false); const [pass, setPass] = useState(""); const [products, setProducts] = useState([]); const [editingId, setEditingId] = useState(null);
   const fetchProducts = () => { fetch(`${API}/products`).then((r) => r.json()).then((d) => setProducts(d)); };
@@ -118,7 +112,6 @@ function Admin() {
   const handleDelete = (id) => { if (window.confirm("Are you sure?")) { fetch(`${API}/products/${id}`, { method: "DELETE" }).then(() => { alert("Deleted!"); fetchProducts(); }); } };
   return (<div style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}><Link to="/"><button>← Back to Store</button></Link><h1>{editingId? "Edit Product" : "Add New Product"}</h1><form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px" }}><input placeholder="Name" value={form.name} onChange={(e) => setForm({...form, name: e.target.value })} required style={{ padding: "10px" }} /><input placeholder="Price" type="number" value={form.price} onChange={(e) => setForm({...form, price: e.target.value })} required style={{ padding: "10px" }} /><input placeholder="Image URL" value={form.image} onChange={(e) => setForm({...form, image: e.target.value })} required style={{ padding: "10px" }} /><select value={form.category} onChange={(e) => setForm({...form, category: e.target.value })} style={{ padding: "10px" }}><option>Laptop</option><option>Mobile</option><option>Accessories</option><option>Gaming</option></select><textarea placeholder="Description" value={form.desc} onChange={(e) => setForm({...form, desc: e.target.value })} style={{ padding: "10px" }}></textarea><button type="submit" style={{ padding: "12px", background: editingId? "green" : "black", color: "white" }}>{editingId? "Update Product" : "Add Product"}</button></form><hr style={{ margin: "30px 0" }} /><h2>All Products ({products.length})</h2>{products.map((p) => (<div key={p._id || p.id} style={{ border: "1px solid #ccc", padding: "10px", margin: "10px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ display: "flex", gap: "10px", alignItems: "center" }}><img src={p.image} width="50" height="50" style={{ objectFit: "cover" }} /><div><b>{p.name}</b><br />₹{p.price}</div></div><div><button onClick={() => handleEdit(p)} style={{ marginRight: "5px", background: "blue", color: "white", padding: "5px 10px" }}>Edit</button><button onClick={() => handleDelete(p._id || p.id)} style={{ background: "red", color: "white", padding: "5px 10px" }}>Delete</button></div></div>))}</div>);
 }
-
 function MainApp() {
   const [products, setProducts] = useState([]); const [searchTerm, setSearchTerm] = useState(""); const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState(() => { try { return JSON.parse(localStorage.getItem("wishlist") || "[]"); } catch { return []; } });
@@ -187,6 +180,5 @@ function MainApp() {
     </div>
   );
 }
-
 function App() { return (<BrowserRouter><MainApp /></BrowserRouter>); }
 export default App;
