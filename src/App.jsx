@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from "react-router-dom";
-import "./App.css";
+// import "./App.css";
 
 const API = "https://node-backend-5hzc.onrender.com";
 
