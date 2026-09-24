@@ -157,40 +157,60 @@ function MainApp() {
   const filteredProducts = products.filter((p) => { const name = (p.name || "").toLowerCase(); const matchSearch = name.includes(searchTerm.toLowerCase()); const matchCategory = selectedCategory === "All" || p.category === selectedCategory; return matchSearch && matchCategory; }).sort((a, b) => { if (sortOrder === "low-high") return a.price - b.price; if (sortOrder === "high-low") return b.price - a.price; return 0; });
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>🛒 E-Commerce Store</h1>
-      <Link to="/"><button>Store</button></Link>
-      <Link to="/cart"><button>View Cart: {cart.reduce((a, b) => a + b.quantity, 0)}</button></Link>
-      <Link to="/wishlist"><button style={{ background: "#ff4081", color: "white", marginLeft: "10px" }}>Wishlist: {wishlist.length}</button></Link>
-      <Link to="/myorders"><button style={{ background: "purple", color: "white", marginLeft: "10px" }}>My Orders</button></Link>
-      <Link to="/admin"><button style={{ marginLeft: "10px", background: "black", color: "white" }}>Admin</button></Link>
-      {isLoggedIn? (<button onClick={handleLogout} style={{ background: "red", color: "white", marginLeft: "10px" }}>Logout</button>) : (<><Link to="/login"><button>Login</button></Link><Link to="/register"><button>Register</button></Link></>)}
-      <hr />
-      {orderPlaced && <h2 style={{ color: "green" }}>✅ Order Placed Successfully! Payment: {paymentMethod}</h2>}
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/myorders" element={<MyOrders />} />
-        <Route path="/wishlist" element={<div style={{ padding: "20px" }}><h1>My Wishlist ❤️ ({wishlist.length})</h1>{wishlist.length === 0? <p style={{ textAlign: "center" }}>Wishlist Empty!</p> : <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>{wishlist.map(p => (<div key={getId(p)} className="product-card" style={{ border: "1px solid #ccc", padding: "15px", width: "220px", textAlign: "center", borderRadius: "10px" }}><img src={p.image} width="180" height="150" style={{ objectFit: "cover", borderRadius: "8px" }} /><h4>{p.name}</h4><p style={{ color: "green", fontWeight: "bold" }}>₹{p.price}</p><button onClick={() => addToCart(p)} style={{ background: "#ff9900", color: "white", padding: "6px 10px", border: "none", borderRadius: "5px" }}>Add to Cart</button><button onClick={() => removeFromWishlist(getId(p))} style={{ background: "red", color: "white", padding: "6px 10px", border: "none", borderRadius: "5px", marginLeft: "5px" }}>Remove</button></div>))}</div>}</div>} />
-        <Route path="/" element={<div><h2 style={{ textAlign: "center" }}>Product List</h2><input type="text" placeholder="Search products..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: "50%", padding: "10px", margin: "10px auto", display: "block" }} /><div style={{ textAlign: "center", margin: "20px 0" }}>{categories.map((cat) => (<button key={cat} onClick={() => setSelectedCategory(cat)} style={{ margin: "5px", padding: "10px 20px", backgroundColor: selectedCategory === cat? "#007bff" : "#6c757d", color: "white", border: "none", borderRadius: "20px", cursor: "pointer", fontWeight: "bold" }}>{cat}</button>))}</div><div style={{ textAlign: "center", margin: "10px 0" }}><button onClick={() => setSortOrder("default")} style={{ margin: "5px" }}>Default</button><button onClick={() => setSortOrder("low-high")} style={{ margin: "5px" }}>Low to High</button><button onClick={() => setSortOrder("high-low")} style={{ margin: "5px" }}>High to Low</button></div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>
-            {filteredProducts.map((product) => (
-              <div key={getId(product)} className="product-card" style={{ border: "1px solid #ddd", borderRadius: "10px", padding: "15px", width: "250px", textAlign: "center", boxShadow: "0 4px 8px rgba(0,0,0,0.1)", backgroundColor: "white" }}>
-                <Link to={`/product/${getId(product)}`}><img src={product.image} alt={product.name} style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "8px" }} /></Link>
-                <h3>{product.name}</h3>
-                <p style={{ color: "gray", fontSize: "14px" }}>{product.category}</p>
-                <p style={{ fontSize: "20px", fontWeight: "bold", color: "green" }}>₹{product.price}</p>
-                <button onClick={() => addToCart(product)} style={{ padding: "8px 12px", backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Add to Cart</button>
-                <button onClick={() => addToWishlist(product)} style={{ padding: "8px 12px", backgroundColor: "white", color: "#ff4081", border: "2px solid #ff4081", borderRadius: "5px", cursor: "pointer", marginLeft: "5px", fontWeight: "bold" }}>❤️ Wishlist</button>
-              </div>
-            ))}
-          </div>
-        </div>} />
-        <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} addToWishlist={addToWishlist} />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/cart" element={<div><h2>Your Cart</h2>{cart.length === 0? <p>Cart is empty</p> : (<div>{cart.map((item) => (<div key={getId(item)} style={{ borderBottom: "1px solid #ccc", padding: "10px", display: "flex", justifyContent: "space-between" }}><span>{item.name} - ₹{item.price} x {item.quantity}</span><div><button onClick={() => decreaseQty(getId(item))}>-</button><span style={{ margin: "0 5px" }}>{item.quantity}</span><button onClick={() => increaseQty(getId(item))}>+</button><button onClick={() => removeFromCart(getId(item))} style={{ backgroundColor: "red", color: "white", marginLeft: "5px" }}>Remove</button></div></div>))}<h3>Total: ₹{totalPrice}</h3><button onClick={handleCheckout}>Checkout</button>{showCheckout && (<div style={{ border: "2px solid green", padding: "20px", margin: "20px", borderRadius: "10px" }}>{orderPlaced? <h2 style={{ color: "green" }}>✅ Order Placed Successfully!</h2> : (<><h3>Enter Details & Payment 💳</h3><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" style={{ display: "block", margin: "10px", padding: "8px", width: "90%" }} /><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" maxLength={10} style={{ display: "block", margin: "10px", padding: "8px", width: "90%" }} /><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full Address" style={{ display: "block", margin: "10px", padding: "8px", width: "90%" }} /><div style={{ margin: "15px 0", padding: "10px", background: "#f5f5f5", borderRadius: "8px" }}><h4>Payment Method:</h4><label style={{ display: "block", margin: "5px" }}><input type="radio" checked={paymentMethod === 'COD'} onChange={() => setPaymentMethod('COD')} /> 💵 Cash on Delivery</label><label style={{ display: "block", margin: "5px" }}><input type="radio" checked={paymentMethod === 'Online'} onChange={() => setPaymentMethod('Online')} /> 📱 UPI / Razorpay (Test)</label></div><button onClick={placeOrder} style={{ backgroundColor: "green", color: "white", padding: "12px 25px", border: "none", borderRadius: "5px", fontWeight: "bold" }}>{paymentMethod === 'COD'? `Place Order (COD)` : `Pay ₹${totalPrice} & Order`}</button></>)}</div>)}</div>)}</div>} />
-      </Routes>
-    </div>
+    <>
+      <style>{`
+       .product-card {
+          transition: all 0.3s ease!important;
+          cursor: pointer;
+        }
+       .product-card:hover {
+          transform: translateY(-8px) scale(1.03)!important;
+          box-shadow: 0 15px 30px rgba(0,0,0,0.25)!important;
+          border-color: #007bff!important;
+          background-color: #f0f8ff!important;
+        }
+       .product-card img {
+          transition: transform 0.3s ease!important;
+        }
+       .product-card:hover img {
+          transform: scale(1.08)!important;
+        }
+      `}</style>
+      <div style={{ padding: "20px", fontFamily: "Arial" }}>
+        <h1>🛒 E-Commerce Store</h1>
+        <Link to="/"><button>Store</button></Link>
+        <Link to="/cart"><button>View Cart: {cart.reduce((a, b) => a + b.quantity, 0)}</button></Link>
+        <Link to="/wishlist"><button style={{ background: "#ff4081", color: "white", marginLeft: "10px" }}>Wishlist: {wishlist.length}</button></Link>
+        <Link to="/myorders"><button style={{ background: "purple", color: "white", marginLeft: "10px" }}>My Orders</button></Link>
+        <Link to="/admin"><button style={{ marginLeft: "10px", background: "black", color: "white" }}>Admin</button></Link>
+        {isLoggedIn? (<button onClick={handleLogout} style={{ background: "red", color: "white", marginLeft: "10px" }}>Logout</button>) : (<><Link to="/login"><button>Login</button></Link><Link to="/register"><button>Register</button></Link></>)}
+        <hr />
+        {orderPlaced && <h2 style={{ color: "green" }}>✅ Order Placed Successfully! Payment: {paymentMethod}</h2>}
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/myorders" element={<MyOrders />} />
+          <Route path="/wishlist" element={<div style={{ padding: "20px" }}><h1>My Wishlist ❤️ ({wishlist.length})</h1>{wishlist.length === 0? <p style={{ textAlign: "center" }}>Wishlist Empty!</p> : <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>{wishlist.map(p => (<div key={getId(p)} className="product-card" style={{ border: "1px solid #ccc", padding: "15px", width: "220px", textAlign: "center", borderRadius: "10px", backgroundColor: "white" }}><img src={p.image} width="180" height="150" style={{ objectFit: "cover", borderRadius: "8px" }} /><h4>{p.name}</h4><p style={{ color: "green", fontWeight: "bold" }}>₹{p.price}</p><button onClick={() => addToCart(p)} style={{ background: "#ff9900", color: "white", padding: "6px 10px", border: "none", borderRadius: "5px" }}>Add to Cart</button><button onClick={() => removeFromWishlist(getId(p))} style={{ background: "red", color: "white", padding: "6px 10px", border: "none", borderRadius: "5px", marginLeft: "5px" }}>Remove</button></div>))}</div>}</div>} />
+          <Route path="/" element={<div><h2 style={{ textAlign: "center" }}>Product List</h2><input type="text" placeholder="Search products..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: "50%", padding: "10px", margin: "10px auto", display: "block" }} /><div style={{ textAlign: "center", margin: "20px 0" }}>{categories.map((cat) => (<button key={cat} onClick={() => setSelectedCategory(cat)} style={{ margin: "5px", padding: "10px 20px", backgroundColor: selectedCategory === cat? "#007bff" : "#6c757d", color: "white", border: "none", borderRadius: "20px", cursor: "pointer", fontWeight: "bold" }}>{cat}</button>))}</div><div style={{ textAlign: "center", margin: "10px 0" }}><button onClick={() => setSortOrder("default")} style={{ margin: "5px" }}>Default</button><button onClick={() => setSortOrder("low-high")} style={{ margin: "5px" }}>Low to High</button><button onClick={() => setSortOrder("high-low")} style={{ margin: "5px" }}>High to Low</button></div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>
+              {filteredProducts.map((product) => (
+                <div key={getId(product)} className="product-card" style={{ border: "1px solid #ddd", borderRadius: "10px", padding: "15px", width: "250px", textAlign: "center", boxShadow: "0 4px 8px rgba(0,0,0,0.1)", backgroundColor: "white" }}>
+                  <Link to={`/product/${getId(product)}`}><img src={product.image} alt={product.name} style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "8px" }} /></Link>
+                  <h3>{product.name}</h3>
+                  <p style={{ color: "gray", fontSize: "14px" }}>{product.category}</p>
+                  <p style={{ fontSize: "20px", fontWeight: "bold", color: "green" }}>₹{product.price}</p>
+                  <button onClick={() => addToCart(product)} style={{ padding: "8px 12px", backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Add to Cart</button>
+                  <button onClick={() => addToWishlist(product)} style={{ padding: "8px 12px", backgroundColor: "white", color: "#ff4081", border: "2px solid #ff4081", borderRadius: "5px", cursor: "pointer", marginLeft: "5px", fontWeight: "bold" }}>❤️ Wishlist</button>
+                </div>
+              ))}
+            </div>
+          </div>} />
+          <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} addToWishlist={addToWishlist} />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/cart" element={<div><h2>Your Cart</h2>{cart.length === 0? <p>Cart is empty</p> : (<div>{cart.map((item) => (<div key={getId(item)} style={{ borderBottom: "1px solid #ccc", padding: "10px", display: "flex", justifyContent: "space-between" }}><span>{item.name} - ₹{item.price} x {item.quantity}</span><div><button onClick={() => decreaseQty(getId(item))}>-</button><span style={{ margin: "0 5px" }}>{item.quantity}</span><button onClick={() => increaseQty(getId(item))}>+</button><button onClick={() => removeFromCart(getId(item))} style={{ backgroundColor: "red", color: "white", marginLeft: "5px" }}>Remove</button></div></div>))}<h3>Total: ₹{totalPrice}</h3><button onClick={handleCheckout}>Checkout</button>{showCheckout && (<div style={{ border: "2px solid green", padding: "20px", margin: "20px", borderRadius: "10px" }}>{orderPlaced? <h2 style={{ color: "green" }}>✅ Order Placed Successfully!</h2> : (<><h3>Enter Details & Payment 💳</h3><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" style={{ display: "block", margin: "10px", padding: "8px", width: "90%" }} /><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" maxLength={10} style={{ display: "block", margin: "10px", padding: "8px", width: "90%" }} /><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full Address" style={{ display: "block", margin: "10px", padding: "8px", width: "90%" }} /><div style={{ margin: "15px 0", padding: "10px", background: "#f5f5f5", borderRadius: "8px" }}><h4>Payment Method:</h4><label style={{ display: "block", margin: "5px" }}><input type="radio" checked={paymentMethod === 'COD'} onChange={() => setPaymentMethod('COD')} /> 💵 Cash on Delivery</label><label style={{ display: "block", margin: "5px" }}><input type="radio" checked={paymentMethod === 'Online'} onChange={() => setPaymentMethod('Online')} /> 📱 UPI / Razorpay (Test)</label></div><button onClick={placeOrder} style={{ backgroundColor: "green", color: "white", padding: "12px 25px", border: "none", borderRadius: "5px", fontWeight: "bold" }}>{paymentMethod === 'COD'? `Place Order (COD)` : `Pay ₹${totalPrice} & Order`}</button></>)}</div>)}</div>)}</div>} />
+        </Routes>
+      </div>
+    </>
   );
 }
 function App() { return (<BrowserRouter><MainApp /></BrowserRouter>); }
