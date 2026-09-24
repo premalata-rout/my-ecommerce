@@ -103,7 +103,7 @@ function MainApp() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("COD");
-  const [hoveredId, setHoveredId] = useState(null); // FIX FOR HOVER
+  const [hoveredId, setHoveredId] = useState(null);
   const navigate = useNavigate();
   const isLoggedIn = localStorage.getItem("token");
 
@@ -179,14 +179,16 @@ function MainApp() {
                     padding: "15px",
                     width: "250px",
                     textAlign: "center",
-                    boxShadow: isHover? "0 15px 30px rgba(0,0,0,0.25)" : "0 4px 8px rgba(0,0,0,0.1)",
-                    backgroundColor: isHover? "#f0f8ff" : "white",
+                    boxShadow: isHover? "0 15px 30px rgba(0,0,0,0.3)" : "0 4px 8px rgba(0,0,0,0.1)",
+                    backgroundColor: isHover? "#e6f2ff" : "white",
                     transform: isHover? "translateY(-8px) scale(1.03)" : "translateY(0) scale(1)",
-                    transition: "all 0.3s ease",
+                    transition: "all 0.25s ease",
                     cursor: "pointer"
                   }}>
-                  <Link to={`/product/${id}`}><img src={product.image} alt={product.name} style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "8px", transform: isHover? "scale(1.08)" : "scale(1)", transition: "all 0.3s ease" }} /></Link>
-                  <h3>{product.name}</h3>
+                  <Link to={`/product/${id}`} style={{ textDecoration: "none" }}>
+                    <img src={product.image} alt={product.name} style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "8px", transform: isHover? "scale(1.05)" : "scale(1)", transition: "all 0.25s ease", display: "block" }} />
+                  </Link>
+                  <h3 style={{ marginTop: "10px" }}>{product.name}</h3>
                   <p style={{ color: "gray", fontSize: "14px" }}>{product.category}</p>
                   <p style={{ fontSize: "20px", fontWeight: "bold", color: "green" }}>₹{product.price}</p>
                   <button onClick={() => addToCart(product)} style={{ padding: "8px 12px", backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>Add to Cart</button>
