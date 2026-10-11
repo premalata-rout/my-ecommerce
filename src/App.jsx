@@ -1000,7 +1000,6 @@ function MainApp() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>
                 {filteredProducts.map(product => {
                   const id = getId(product);
-                  const isHover = hoveredId === id;
 
                   return (
                     <div
