@@ -956,102 +956,147 @@ function MainApp() {
           }
         />
 
-        <Route
-          path="/"
-          element={
-            <div>
-              <h2 style={{ textAlign: "center" }}>Product List</h2>
+        
+<Route
+  path="/"
+  element={
+    <div>
+      <h2 style={{ textAlign: "center" }}>Product List</h2>
 
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                style={{ width: "50%", padding: "10px", margin: "10px auto", display: "block" }}
-              />
+      <input
+        type="text"
+        placeholder="Search products..."
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        style={{
+          width: "50%",
+          padding: "10px",
+          margin: "10px auto",
+          display: "block"
+        }}
+      />
 
-              <div style={{ textAlign: "center", margin: "20px 0" }}>
-                {categories.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    style={{
-                      margin: "5px",
-                      padding: "10px 20px",
-                      backgroundColor: selectedCategory === cat ? "#007bff" : "#6c757d",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      fontWeight: "bold"
-                    }}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
+      <div style={{ textAlign: "center", margin: "20px 0" }}>
+        {categories.map(cat => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            style={{
+              margin: "5px",
+              padding: "10px 20px",
+              backgroundColor:
+                selectedCategory === cat ? "#007bff" : "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "20px",
+              cursor: "pointer",
+              fontWeight: "bold"
+            }}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
 
-              <div style={{ textAlign: "center", margin: "10px 0" }}>
-                <button onClick={() => setSortOrder("default")} style={{ margin: "5px" }}>Default</button>
-                <button onClick={() => setSortOrder("low-high")} style={{ margin: "5px" }}>Low to High</button>
-                <button onClick={() => setSortOrder("high-low")} style={{ margin: "5px" }}>High to Low</button>
-              </div>
+      <div style={{ textAlign: "center", margin: "10px 0" }}>
+        <button onClick={() => setSortOrder("default")} style={{ margin: "5px" }}>
+          Default
+        </button>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>
-                {filteredProducts.map(product => {
-                  const id = getId(product);
+        <button onClick={() => setSortOrder("low-high")} style={{ margin: "5px" }}>
+          Low to High
+        </button>
 
-                  return (
-                    <div
-                      key={id}
-                      onMouseEnter={() => setHoveredId(id)}
-                      onMouseLeave={() => setHoveredId(null)}
-                      style={{
-                        border: isHover ? "2px solid #007bff" : "1px solid #ddd",
-                        borderRadius: "10px",
-                        padding: "15px",
-                        width: "250px",
-                        textAlign: "center",
-                        boxShadow: isHover ? "0 15px 30px rgba(0,0,0,0.3)" : "0 4px 8px rgba(0,0,0,0.1)",
-                        backgroundColor: isHover ? "#e6f2ff" : "white",
-                        transform: isHover ? "translateY(-8px) scale(1.03)" : "translateY(0) scale(1)",
-                        transition: "all 0.25s ease",
-                        cursor: "pointer"
-                      }}
-                    >
-                      <Link to={`/product/${id}`} style={{ textDecoration: "none" }}>
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          style={{
-                            width: "100%",
-                            height: "200px",
-                            objectFit: "cover",
-                            borderRadius: "8px",
-                            transform: isHover ? "scale(1.05)" : "scale(1)",
-                            transition: "all 0.25s ease",
-                            display: "block"
-                          }}
-                        />
-                      </Link>
+        <button onClick={() => setSortOrder("high-low")} style={{ margin: "5px" }}>
+          High to Low
+        </button>
+      </div>
 
-                      <h3 style={{ marginTop: "10px" }}>{product.name}</h3>
-                      <p style={{ color: "gray", fontSize: "14px" }}>{product.category}</p>
-                      <p style={{ fontSize: "20px", fontWeight: "bold", color: "green" }}>₹{product.price}</p>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "20px",
+          justifyContent: "center"
+        }}
+      >
+        {filteredProducts.map(product => {
+          const id = getId(product);
 
-                      <button onClick={() => addToCart(product)} style={{ padding: "8px 12px", backgroundColor: "#ff9900", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>
-                        Add to Cart
-                      </button>
-                      <button onClick={() => addToWishlist(product)} style={{ padding: "8px 12px", backgroundColor: "white", color: "#ff4081", border: "2px solid #ff4081", borderRadius: "5px", cursor: "pointer", marginLeft: "5px", fontWeight: "bold" }}>
-                        ❤️ Wishlist
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+          return (
+            <div key={id} className="product-card">
+              <Link
+                to={`/product/${id}`}
+                style={{ textDecoration: "none" }}
+              >
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="product-image"
+                  style={{
+                    width: "100%",
+                    height: "200px",
+                    objectFit: "cover",
+                    borderRadius: "8px",
+                    display: "block"
+                  }}
+                />
+              </Link>
+
+              <h3 style={{ marginTop: "10px" }}>
+                {product.name}
+              </h3>
+
+              <p style={{ color: "gray", fontSize: "14px" }}>
+                {product.category}
+              </p>
+
+              <p
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  color: "green"
+                }}
+              >
+                ₹{product.price}
+              </p>
+
+              <button
+                onClick={() => addToCart(product)}
+                style={{
+                  padding: "8px 12px",
+                  backgroundColor: "#ff9900",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer"
+                }}
+              >
+                Add to Cart
+              </button>
+
+              <button
+                onClick={() => addToWishlist(product)}
+                style={{
+                  padding: "8px 12px",
+                  backgroundColor: "white",
+                  color: "#ff4081",
+                  border: "2px solid #ff4081",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  marginLeft: "5px",
+                  fontWeight: "bold"
+                }}
+              >
+                ❤️ Wishlist
+              </button>
             </div>
-          }
-        />
+          );
+        })}
+      </div>
+    </div>
+  }
+/>
 
         <Route
           path="/product/:id"
